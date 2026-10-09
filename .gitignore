@@ -1,0 +1,7 @@
+.env
+*.log
+.DS_Store
+bin/
+
+# boureminder-api (the deploy binary) is intentionally tracked —
+# see coolify_deploy.md. Don't add it here.

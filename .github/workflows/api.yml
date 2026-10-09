@@ -1,0 +1,43 @@
+name: api
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: bou_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://app:app@localhost:5432/bou_test?sslmode=disable
+      DATABASE_DIRECT_URL: postgres://app:app@localhost:5432/bou_test?sslmode=disable
+      AWS_ENDPOINT_URL_S3: http://localhost:9000
+      AWS_REGION: ap-southeast-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      S3_BUCKET: bou-test
+      FIREBASE_PROJECT_ID: bou-reminder-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.27"
+          cache: true
+      - run: gofmt -l . | tee /tmp/fmt.out && test ! -s /tmp/fmt.out
+      - run: go vet ./...
+      - run: go tool goose -dir internal/db/migrations postgres "$DATABASE_DIRECT_URL" up
+      - run: go build ./...
+      - run: go test ./... -race
